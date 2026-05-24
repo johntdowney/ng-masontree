@@ -1,0 +1,27 @@
+{
+  "name": "@your-org/masontree",
+  "version": "1.0.0",
+  "description": "Angular bin-packing layout component backed by functional red-black trees",
+  "author": "",
+  "license": "MIT",
+  "peerDependencies": {
+    "@angular/core": ">=21.0.0",
+    "@angular/common": ">=21.0.0"
+  },
+  "dependencies": {
+    "functional-red-black-tree": "^1.0.1"
+  },
+  "devDependencies": {
+    "@angular-devkit/build-angular": ">=21.0.0",
+    "@angular/cli": ">=21.0.0",
+    "@angular/compiler": ">=21.0.0",
+    "@angular/compiler-cli": ">=21.0.0",
+    "ng-packagr": ">=21.0.0",
+    "typescript": ">=5.5.0",
+    "@types/functional-red-black-tree": "^1.0.4"
+  },
+  "scripts": {
+    "build": "ng-packagr -p ng-package.json",
+    "build:watch": "ng-packagr -p ng-package.json --watch"
+  }
+}
