@@ -63,11 +63,11 @@ export class MasonTree {
   get height(): number { return this.container.h; }
 
   // ── Protected (mixin-accessible) ───────────────────────────────────────────
-  protected x: AxisIndex = { bst: createTree(), frequencies: {} };
-  protected y: AxisIndex = { bst: createTree(), frequencies: {} };
+  x: AxisIndex = { bst: createTree(), frequencies: {} };
+  y: AxisIndex = { bst: createTree(), frequencies: {} };
 
   // ── Private ────────────────────────────────────────────────────────────────
-  private readonly validator: (tree: MasonTree) => boolean;
+  readonly validator: (tree: MasonTree) => boolean;
 
   // ─────────────────────────────────────────────────────────────────────────
 
@@ -139,7 +139,7 @@ export class MasonTree {
 
   // ── Protected (mixin-accessible index mutations) ────────────────────────────
 
-  protected getOrCreateSubTree(axis: Axis, val: number): RectTree {
+  getOrCreateSubTree(axis: Axis, val: number): RectTree {
     const existing = this[axis].bst.get(val);
     if (existing) return existing;
     const fresh: RectTree = createTree();
@@ -147,7 +147,7 @@ export class MasonTree {
     return fresh;
   }
 
-  protected populateSubTree(axis: Axis, axisPosition: number): void {
+  populateSubTree(axis: Axis, axisPosition: number): void {
     const opp  = axis === 'x' ? 'y' : 'x';
     const maxA = axis === 'x' ? 'maxX' : 'maxY';
 
@@ -168,7 +168,7 @@ export class MasonTree {
     }
   }
 
-  protected insertRectIntoAxis(rect: Rect, axis: Axis): void {
+  insertRectIntoAxis(rect: Rect, axis: Axis): void {
     const opp    = axis === 'x' ? 'y' : 'x';
     const maxA   = axis === 'x' ? 'maxX' : 'maxY';
     const pos    = rect[axis];
@@ -192,11 +192,11 @@ export class MasonTree {
 
   // ── Private ─────────────────────────────────────────────────────────────────
 
-  private insertionPoints: Tree<Point, undefined> =
+  insertionPoints: Tree<Point, undefined> =
     (createTree((a: Point, b: Point) => a.y - b.y || a.x - b.x) as Tree<Point, undefined>)
       .insert({ x: 0, y: 0 }, undefined);
 
-  private _pack(rect: Rect): void {
+  _pack(rect: Rect): void {
     const iter = this.insertionPoints.begin;
     while (iter.valid) {
       const point = iter.key!;

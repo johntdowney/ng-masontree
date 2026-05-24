@@ -70,8 +70,8 @@ export function LayoutMixin<TBase extends MasonTreeCtor>(Base: TBase) {
       for (let i = 0; i < iterations; i++) {
         for (const [id, rect] of this.rects) {
           const o = resolve(opts, id);
-          if (o.pullX) this.pullRectangle(rect, 'x', o.pullXValue, !!o.stickyLeftWall,  !!o.stickyRightWall);
-          if (o.pullY) this.pullRectangle(rect, 'y', o.pullYValue, !!o.stickyTopWall,   !!o.stickyBottomWall);
+          if (o.pullX) this.pullRectangle(rect, 'x', o.pullXValue, o.stickyLeftWall,  o.stickyRightWall);
+          if (o.pullY) this.pullRectangle(rect, 'y', o.pullYValue, o.stickyTopWall,   o.stickyBottomWall);
         }
       }
       return this.rects;
@@ -158,30 +158,30 @@ export function LayoutMixin<TBase extends MasonTreeCtor>(Base: TBase) {
       // Guard: max-edge slab must not retain rect (off-by-one edge case)
       const oppAxis = opp(axis);
       const maxSlab = this[axis].bst.get(newMax);
-      if (maxSlab?.get(rect[oppAxis]) === rect) {
+      if (maxSlab && maxSlab.get(rect[oppAxis]) === rect) {
         this[axis].bst = this[axis].bst.remove(newMax).insert(newMax, maxSlab.remove(rect[oppAxis]));
       }
     }
 
     // ── Private index-mutation helpers ────────────────────────────────────────
 
-    private _translateParallel(rect: Rect, axis: Axis, newPos: number): void {
+    _translateParallel(rect: Rect, axis: Axis, newPos: number): void {
       const oppAxis = opp(axis);
       const maxOpp  = maxOf(oppAxis);
       let iter      = this[oppAxis].bst.find(rect[oppAxis]);
 
       while (iter.valid) {
         const { key, value } = iter;
-        if (key >= rect[maxOpp]) break;
-        const without = value.remove(rect[axis]);
+        if (key! >= rect[maxOpp]) break;
+        const without = value!.remove(rect[axis]);
         if (without.get(newPos)) { iter.next(); continue; }
         const updated = without.insert(newPos, rect);
-        this[oppAxis].bst = iter.remove(key).insert(key, updated);
-        iter = this[oppAxis].bst.gt(key);
+        this[oppAxis].bst = iter.remove().insert(key!, updated);
+        iter = this[oppAxis].bst.gt(key!);
       }
     }
 
-    private _translatePerpendicular(rect: Rect, axis: Axis, newPos: number): void {
+    _translatePerpendicular(rect: Rect, axis: Axis, newPos: number): void {
       const oppAxis = opp(axis);
       const size    = rect[sizeOf(axis)];
       const newMax  = newPos + size;
@@ -194,22 +194,22 @@ export function LayoutMixin<TBase extends MasonTreeCtor>(Base: TBase) {
       let iter = this[axis].bst.find(rect[axis]);
       while (iter.valid) {
         const { key, value } = iter;
-        if (key >= rect[maxA]) break;
-        this[axis].bst = iter.update(value.remove(rect[oppAxis]));
-        iter = this[axis].bst.gt(key);
+        if (key! >= rect[maxA]) break;
+        this[axis].bst = iter.update(value!.remove(rect[oppAxis]));
+        iter = this[axis].bst.gt(key!);
       }
 
       // Insert into new range
       iter = this[axis].bst.find(newPos);
       while (iter.valid) {
         const { key, value } = iter;
-        if (key >= newMax) break;
-        this[axis].bst = iter.update(value.insert(rect[oppAxis], rect));
-        iter = this[axis].bst.gt(key);
+        if (key! >= newMax) break;
+        this[axis].bst = iter.update(value!.insert(rect[oppAxis], rect));
+        iter = this[axis].bst.gt(key!);
       }
     }
 
-    private _decrementFreq(axis: Axis, pos: number, freq: Record<number, number>): void {
+    _decrementFreq(axis: Axis, pos: number, freq: Record<number, number>): void {
       freq[pos]--;
       if (freq[pos] === 0) {
         delete freq[pos];

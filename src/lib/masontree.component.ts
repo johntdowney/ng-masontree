@@ -101,14 +101,14 @@ export class MasonTreeComponent implements AfterContentInit, OnChanges, OnDestro
   @Input() opts?: MasonTreeOptions;
 
   // ── DI ─────────────────────────────────────────────────────────────────────
-  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
-  private readonly zone = inject(NgZone);
+  readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  readonly zone = inject(NgZone);
 
   // ── State ───────────────────────────────────────────────────────────────────
-  private containerObserver!: ResizeObserver;
-  private childObserver!:     ResizeObserver;
-  private childMutations!:    MutationObserver;
-  private scheduled           = false;
+  containerObserver!: ResizeObserver;
+  childObserver!:     ResizeObserver;
+  childMutations!:    MutationObserver;
+  scheduled           = false;
 
   // ── Lifecycle ────────────────────────────────────────────────────────────────
 
@@ -151,7 +151,7 @@ export class MasonTreeComponent implements AfterContentInit, OnChanges, OnDestro
   // ── Private ─────────────────────────────────────────────────────────────────
 
   /** Register every direct child with the child ResizeObserver. */
-  private _observeChildren(): void {
+  _observeChildren(): void {
     this.childObserver.disconnect();
     for (const child of this._children()) {
       this.childObserver.observe(child);
@@ -159,7 +159,7 @@ export class MasonTreeComponent implements AfterContentInit, OnChanges, OnDestro
   }
 
   /** Debounce multiple synchronous resize events into one layout pass. */
-  private _schedule(): void {
+  _schedule(): void {
     if (this.scheduled) return;
     this.scheduled = true;
     requestAnimationFrame(() => {
@@ -168,11 +168,11 @@ export class MasonTreeComponent implements AfterContentInit, OnChanges, OnDestro
     });
   }
 
-  private _children(): HTMLElement[] {
+  _children(): HTMLElement[] {
     return Array.from(this.host.nativeElement.children) as HTMLElement[];
   }
 
-  private _runLayout(): void {
+  _runLayout(): void {
     const options      = { ...DEFAULTS, ...this.opts };
     const gap          = options.gap;
     const hostEl       = this.host.nativeElement;

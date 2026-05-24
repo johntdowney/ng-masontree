@@ -6,12 +6,11 @@
   "license": "MIT",
   "peerDependencies": {
     "@angular/core": ">=21.0.0",
-    "@angular/common": ">=21.0.0"
-  },
-  "dependencies": {
+    "@angular/common": ">=21.0.0",
     "functional-red-black-tree": "^1.0.1"
   },
   "devDependencies": {
+    "functional-red-black-tree": "^1.0.1",
     "@angular-devkit/build-angular": ">=21.0.0",
     "@angular/cli": ">=21.0.0",
     "@angular/compiler": ">=21.0.0",
