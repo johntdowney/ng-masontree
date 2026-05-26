@@ -1,156 +1,139 @@
-# masontree
+# ng-masontree
 
-An Angular layout component that packs its direct children using a 2-D
-bin-packing algorithm backed by functional red-black trees, then runs an
-iterative repositioning pass to even out the spacing.
+An Angular layout component that packs its direct children using the [Masontree](https://github.com/johntdowney/masontree) bin-packing algorithm, then iteratively repositions them for even spacing. The name is a play on *masonry layout* because ng-masontree provides a similar layout, but without a rigid grid-based approach and handling arbitrarily sized rectangles.
 
 ## Installation
 
 ```bash
-npm install masontree functional-red-black-tree
-npm install --save-dev @types/functional-red-black-tree
+npm install @johntdowney/ng-masontree
 ```
+
+Requires Angular 21+. No other dependencies required.
 
 ## Basic usage
 
-```html
-<masontree [opts]="options">
-  <div style="width: 200px; height: 302px">Rectangle #1</div>
-  <div style="width: 102px; height: 120px">Rectangle #2</div>
-  <div style="width: 240px; height: 200px">Rectangle #3</div>
-</masontree>
-```
+Import the component (and optionally the directive) into your standalone component or NgModule:
 
 ```ts
-import { Component } from '@angular/core';
-import { MasontreeComponent, MasontreeOptions } from 'masontree';
+import { MasonTreeComponent, MasonItemDirective } from '@johntdowney/ng-masontree';
 
 @Component({
-  selector: 'app-root',
   standalone: true,
-  imports: [MasontreeComponent],
+  imports: [MasonTreeComponent, MasonItemDirective],
   template: `
-    <masontree [opts]="options" style="width: 800px; background: #f5f5f5;">
-      <div *ngFor="let item of items"
-           [style.width.px]="item.w"
-           [style.height.px]="item.h"
-           style="background: steelblue; border-radius: 4px;">
-        {{ item.label }}
-      </div>
+    <masontree [opts]="{ gap: 12 }">
+      <div style="width: 200px; height: 302px">Rectangle #1</div>
+      <div style="width: 102px; height: 120px">Rectangle #2</div>
+      <div style="width: 240px; height: 200px">Rectangle #3</div>
     </masontree>
   `,
 })
-export class AppComponent {
-  options: MasontreeOptions = {
-    gap:          12,   // px of breathing room around each item
-    iterations:   8,    // repositioning passes
-    positionMode: 'top-transform',
-    pull: {
-      pullXValue: 0,    // centre horizontally
-      pullYValue: 0,    // centre vertically
-    },
-  };
-
-  items = [
-    { w: 200, h: 120, label: 'A' },
-    { w: 140, h: 200, label: 'B' },
-    { w: 260, h:  80, label: 'C' },
-  ];
-}
+export class AppComponent {}
 ```
 
-## How it works
+The component:
+- Measures its own width via `ResizeObserver`
+- Measures each direct child's width and height
+- Packs them using the Masontree algorithm
+- Writes `top` and `transform: translateX(...)` back to each child
+- Sets its own `height` to match the packed content
+- Re-runs the layout whenever the container or any child changes size, or children are added/removed
 
-1. The component measures its own width via `ResizeObserver`.
-2. It measures each direct child's width and height.
-3. It runs the greedy bin-packing algorithm (Masontree) to find non-overlapping
-   positions for all children within the container width.
-4. It runs `iterativelyAdjustRectangles` to spread items out evenly.
-5. It writes `top` / `transform` (or `left` / `transform`, depending on
-   `positionMode`) back to each child element.
-6. It sets the host element's `height` to match the packed content.
-7. Steps 1–6 repeat whenever the container or any child changes size, or
-   whenever children are added/removed.
+The **width** is always taken from the host element — style it however you like (`width: 100%`, a fixed value, etc.). The **height** is always derived from the algorithm output and should not be set in CSS.
 
-The **height** of the container is always derived from the algorithm.
-The **width** is always taken from the host element as-is.
-You style the width however you like (fixed, `100%`, `max-width`, etc.).
+## Options
 
-## Options (`MasontreeOptions`)
+Pass options via the `[opts]` input:
 
-| Option          | Type                                        | Default          | Description                                                           |
-|-----------------|---------------------------------------------|------------------|-----------------------------------------------------------------------|
-| `gap`           | `number`                                    | `8`              | Pixels of padding around each item (creates visual spacing)           |
-| `iterations`    | `number`                                    | `8`              | Repositioning passes; more = tighter packing, higher CPU cost         |
-| `positionMode`  | `'transform' \| 'top-left' \| 'top-transform'` | `'top-transform'` | How positions are written to child elements (see below)               |
-| `pull`          | `PullOptions \| (el) => PullOptions`        | centred, no wall | Pull bias per axis; function form receives the child `HTMLElement`    |
+```ts
+options: MasonTreeOptions = {
+  gap:        12,
+  iterations: 8,
+  transition: 'top 200ms ease, transform 200ms ease',
+  pull: {
+    pullXValue: 0,   // centre horizontally
+    pullYValue: -1,  // push to top
+  },
+};
+```
 
-### `positionMode`
+```html
+<masontree [opts]="options" style="width: 100%;">
+  ...
+</masontree>
+```
 
-| Mode              | Written styles                                              | Notes                        |
-|-------------------|-------------------------------------------------------------|------------------------------|
-| `'top-transform'` | `top: ${y}px; transform: translateX(${x}px)`               | **Default.** GPU-friendly.   |
-| `'transform'`     | `transform: translate(${x}px, ${y}px)`                     | Single property, compositor. |
-| `'top-left'`      | `top: ${y}px; left: ${x}px`                                | Triggers layout, avoid if animating. |
+### `MasonTreeOptions`
+
+| Option | Type | Default                                  | Description |
+|---|---|------------------------------------------|---|
+| `gap` | `number` | `0`                                      | Gap in px between rects. Does not apply at container edges — rects can sit flush with the container walls. See [Gap and margins](#gap-and-margins). |
+| `iterations` | `number` | `8`                                      | Number of repositioning passes after initial packing |
+| `pull` | `PullOptions \| (el: HTMLElement) => PullOptions` | centered, no wall-snap                   | Pull bias per axis. Function form receives the child `HTMLElement`. |
+| `transition` | `string` | `'top 200ms ease, transform 200ms ease'` | CSS transition for position changes. Set to `''` to disable. |
 
 ### `PullOptions`
 
-| Option            | Type      | Default | Description                                          |
-|-------------------|-----------|---------|------------------------------------------------------|
-| `pullX`           | `boolean` | `true`  | Adjust horizontal position                           |
-| `pullY`           | `boolean` | `true`  | Adjust vertical position                             |
-| `pullXValue`      | `number`  | `0`     | Bias in [-1, 1]: -1 = left, 0 = centre, +1 = right |
-| `pullYValue`      | `number`  | `0`     | Bias in [-1, 1]: -1 = top, 0 = centre, +1 = bottom |
-| `stickyLeftWall`  | `boolean` | `false` | Snap to left edge when nothing obstructs             |
-| `stickyTopWall`   | `boolean` | `false` | Snap to top edge when nothing obstructs              |
-| `stickyRightWall` | `boolean` | `false` | Snap to right edge when nothing obstructs            |
-| `stickyBottomWall`| `boolean` | `false` | Snap to bottom edge when nothing obstructs           |
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `pullX` | `boolean` | `true` | Adjust horizontal position |
+| `pullY` | `boolean` | `true` | Adjust vertical position |
+| `pullXValue` | `number` | `0` | Bias in [-1, 1]: -1 = left wall, 0 = centre, +1 = right wall |
+| `pullYValue` | `number` | `0` | Bias in [-1, 1]: -1 = top wall, 0 = centre, +1 = bottom wall |
+| `stickyLeftWall` | `boolean` | `false` | Snap to left edge when unobstructed |
+| `stickyTopWall` | `boolean` | `false` | Snap to top edge when unobstructed |
+| `stickyRightWall` | `boolean` | `false` | Snap to right edge when unobstructed |
+| `stickyBottomWall` | `boolean` | `false` | Snap to bottom edge when unobstructed |
 
-### Per-item pull via function
+## Per-item margins with `[masonItem]`
+
+Use the `MasonItemDirective` on any direct child to give it its own margin, overriding the container's `gap` for that item. The gap between two adjacent rects is `Math.max(rectA.margin, rectB.margin)` — the larger value wins (margin collapsing, same model as CSS).
+
+```html
+<masontree [opts]="{ gap: 12 }">
+  <div style="width: 200px; height: 150px">normal — 12px gap</div>
+
+  <div masonItem [masonMargin]="32"
+       style="width: 200px; height: 150px">
+    roomy — 32px gap
+  </div>
+
+  <div masonItem [masonMargin]="0"
+       style="width: 200px; height: 150px">
+    flush — 0px gap
+  </div>
+</masontree>
+```
+
+## Gap and margins
+
+Gap **does not apply at container edges**. A rect at `x=0` or `y=0` sits flush with the container wall regardless of the `gap` setting or `[masonMargin]`. The gap only affects the space between two rects.
+
+```
+┌─────────────────────────────┐  ← container wall, no gap here
+│┌──────┐  gap  ┌──────┐      │
+││ RectA│◄─────►│ RectB│      │
+│└──────┘       └──────┘      │
+│                             │
+└─────────────────────────────┘
+```
+
+## Per-item pull via function
 
 ```ts
-options: MasontreeOptions = {
+options: MasonTreeOptions = {
   pull: (el: HTMLElement) => ({
-    pullXValue: el.classList.contains('hero') ? -1 : 0,  // hero items hug the left
-    stickyLeftWall: el.classList.contains('hero'),
+    // Hero items stick to the left wall; everything else centres
+    pullXValue:      el.classList.contains('hero') ? -1 : 0,
+    stickyLeftWall:  el.classList.contains('hero'),
   }),
 };
 ```
 
-## Programmatic use (no Angular)
+## Programmatic use
 
-The core algorithm is framework-agnostic:
+The underlying algorithm is available from the separate `@johntdowney/masontree` package for use outside Angular.
 
-```ts
-import { MasontreeWithLayout } from 'masontree';
+## License
 
-const tree = new MasontreeWithLayout(800 /* container width */);
-tree.addRect(
-  { id: 'a', x: 0, y: 0, w: 200, h: 120 },
-  { id: 'b', x: 0, y: 0, w: 140, h: 200 },
-);
-tree.iterativelyAdjustRectangles(8, { pullXValue: 0, pullYValue: -1 });
-
-for (const [id, rect] of tree.rects) {
-  console.log(id, rect.x, rect.y);
-}
-```
-
-## Building the library
-
-```bash
-npm install
-npm run build
-# output → dist/masontree/
-```
-
-In your consuming application, point to the dist folder or publish to npm:
-
-```json
-// consuming app's package.json
-{
-  "dependencies": {
-    "masontree": "file:../masontree/dist/masontree"
-  }
-}
-```
+MIT
