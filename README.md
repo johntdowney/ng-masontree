@@ -15,11 +15,11 @@ Requires Angular 21+. No other dependencies required.
 Import the component (and optionally the directive) into your standalone component or NgModule:
 
 ```ts
-import { MasonTreeComponent, MasonItemDirective } from '@johntdowney/ng-masontree';
+import { MasontreeComponent, MasonItemDirective } from '@johntdowney/ng-masontree';
 
 @Component({
   standalone: true,
-  imports: [MasonTreeComponent, MasonItemDirective],
+  imports: [MasontreeComponent, MasonItemDirective],
   template: `
     <masontree [opts]="{ gap: 12 }">
       <div style="width: 200px; height: 302px">Rectangle #1</div>
@@ -46,7 +46,7 @@ The **width** is always taken from the host element — style it however you lik
 Pass options via the `[opts]` input:
 
 ```ts
-options: MasonTreeOptions = {
+options: MasontreeOptions = {
   gap:        12,
   iterations: 8,
   transition: 'top 200ms ease, transform 200ms ease',
@@ -63,7 +63,7 @@ options: MasonTreeOptions = {
 </masontree>
 ```
 
-### `MasonTreeOptions`
+### `MasontreeOptions`
 
 | Option | Type | Default                                  | Description |
 |---|---|------------------------------------------|---|
@@ -121,7 +121,7 @@ Gap **does not apply at container edges**. A rect at `x=0` or `y=0` sits flush w
 ## Per-item pull via function
 
 ```ts
-options: MasonTreeOptions = {
+options: MasontreeOptions = {
   pull: (el: HTMLElement) => ({
     // Hero items stick to the left wall; everything else centres
     pullXValue:      el.classList.contains('hero') ? -1 : 0,
