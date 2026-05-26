@@ -10,7 +10,7 @@ import {
   OnDestroy,
   SimpleChanges,
 } from '@angular/core';
-import { MasonTree, PullOptions } from '@johntdowney/masontree/dist';
+import { Masontree, PullOptions } from '@johntdowney/masontree/dist';
 
 // ─── MasonItem directive ──────────────────────────────────────────────────────
 //
@@ -48,9 +48,9 @@ export class MasonItemDirective implements OnChanges {
   }
 }
 
-// ─── MasonTree component ──────────────────────────────────────────────────────
+// ─── Masontree component ──────────────────────────────────────────────────────
 
-export interface MasonTreeOptions {
+export interface MasontreeOptions {
   /**
    * Global gap in px between packed rectangles.
    * Collapses with per-rect [masonMargin] — the larger value wins.
@@ -89,8 +89,8 @@ const DEFAULT_TRANSITION = 'top 200ms ease, transform 200ms ease';
     `,
   ],
 })
-export class MasonTreeComponent implements AfterContentInit, OnChanges, OnDestroy {
-  @Input() opts?: MasonTreeOptions;
+export class MasontreeComponent implements AfterContentInit, OnChanges, OnDestroy {
+  @Input() opts?: MasontreeOptions;
 
   private hostEl!: HTMLElement;
   private containerObs!: ResizeObserver;
@@ -167,7 +167,7 @@ export class MasonTreeComponent implements AfterContentInit, OnChanges, OnDestro
     if (children.length === 0 || containerW === 0) return;
 
     // Build tree with the true container width and global gap.
-    const tree = new MasonTree(containerW, gap);
+    const tree = new Masontree(containerW, gap);
 
     // Pack with true sizes — no inflation.
     // Per-rect margin is read from the [masonItem] directive's property if set,

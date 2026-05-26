@@ -23,12 +23,12 @@ npm install --save-dev @types/functional-red-black-tree
 
 ```ts
 import { Component } from '@angular/core';
-import { MasonTreeComponent, MasonTreeOptions } from 'masontree';
+import { MasontreeComponent, MasontreeOptions } from 'masontree';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [MasonTreeComponent],
+  imports: [MasontreeComponent],
   template: `
     <masontree [opts]="options" style="width: 800px; background: #f5f5f5;">
       <div *ngFor="let item of items"
@@ -41,7 +41,7 @@ import { MasonTreeComponent, MasonTreeOptions } from 'masontree';
   `,
 })
 export class AppComponent {
-  options: MasonTreeOptions = {
+  options: MasontreeOptions = {
     gap:          12,   // px of breathing room around each item
     iterations:   8,    // repositioning passes
     positionMode: 'top-transform',
@@ -63,7 +63,7 @@ export class AppComponent {
 
 1. The component measures its own width via `ResizeObserver`.
 2. It measures each direct child's width and height.
-3. It runs the greedy bin-packing algorithm (MasonTree) to find non-overlapping
+3. It runs the greedy bin-packing algorithm (Masontree) to find non-overlapping
    positions for all children within the container width.
 4. It runs `iterativelyAdjustRectangles` to spread items out evenly.
 5. It writes `top` / `transform` (or `left` / `transform`, depending on
@@ -76,7 +76,7 @@ The **height** of the container is always derived from the algorithm.
 The **width** is always taken from the host element as-is.
 You style the width however you like (fixed, `100%`, `max-width`, etc.).
 
-## Options (`MasonTreeOptions`)
+## Options (`MasontreeOptions`)
 
 | Option          | Type                                        | Default          | Description                                                           |
 |-----------------|---------------------------------------------|------------------|-----------------------------------------------------------------------|
@@ -109,7 +109,7 @@ You style the width however you like (fixed, `100%`, `max-width`, etc.).
 ### Per-item pull via function
 
 ```ts
-options: MasonTreeOptions = {
+options: MasontreeOptions = {
   pull: (el: HTMLElement) => ({
     pullXValue: el.classList.contains('hero') ? -1 : 0,  // hero items hug the left
     stickyLeftWall: el.classList.contains('hero'),
@@ -122,9 +122,9 @@ options: MasonTreeOptions = {
 The core algorithm is framework-agnostic:
 
 ```ts
-import { MasonTreeWithLayout } from 'masontree';
+import { MasontreeWithLayout } from 'masontree';
 
-const tree = new MasonTreeWithLayout(800 /* container width */);
+const tree = new MasontreeWithLayout(800 /* container width */);
 tree.addRect(
   { id: 'a', x: 0, y: 0, w: 200, h: 120 },
   { id: 'b', x: 0, y: 0, w: 140, h: 200 },
