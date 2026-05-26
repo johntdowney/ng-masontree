@@ -2,250 +2,219 @@ import {
   AfterContentInit,
   ChangeDetectionStrategy,
   Component,
+  Directive,
   ElementRef,
   Input,
   NgZone,
   OnChanges,
   OnDestroy,
   SimpleChanges,
-  inject,
 } from '@angular/core';
-import { MasonTreeWithLayout } from './mason-tree-layout';
-import { PullOptions, PullOptionsResolver } from './mason-tree-layout';
+import { MasonTree, PullOptions } from '@johntdowney/masontree/dist';
 
-// ─── Public options type ──────────────────────────────────────────────────────
+// ─── MasonItem directive ──────────────────────────────────────────────────────
+//
+// Optional directive on any direct child of <masontree>.
+// Allows per-rect margin override of the container's global gap.
+//
+// Usage:
+//   <div masonItem [masonMargin]="24">big gap around this one</div>
+//   <div masonItem>uses container gap</div>
+//
+// The margin collapses with its neighbours: the space between two rects is
+// Math.max(rectA.margin, rectB.margin). Rects flush with a container wall
+// always have zero margin on that edge regardless of masonMargin.
+
+const MASON_MARGIN_KEY = '__masonMargin';
+
+@Directive({
+  selector: '[masonItem]',
+  standalone: true,
+})
+export class MasonItemDirective implements OnChanges {
+  @Input() masonMargin?: number;
+
+  constructor(private readonly elRef: ElementRef<HTMLElement>) {
+    this.write();
+  }
+
+  ngOnChanges(): void {
+    this.write();
+  }
+
+  private write(): void {
+    (this.elRef.nativeElement as any)[MASON_MARGIN_KEY] =
+      this.masonMargin != null ? Math.max(0, this.masonMargin) : undefined;
+  }
+}
+
+// ─── MasonTree component ──────────────────────────────────────────────────────
 
 export interface MasonTreeOptions {
   /**
-   * Number of iterative repositioning passes to run after packing.
-   * @default 8
+   * Global gap in px between packed rectangles.
+   * Collapses with per-rect [masonMargin] — the larger value wins.
+   * Does NOT add margin at the container edges.
+   * @default 0
    */
+  gap?: number;
+
+  /** Repositioning passes after initial packing. @default 8 */
   iterations?: number;
 
-  /**
-   * Pull options applied to every rectangle, or a function that receives a
-   * rect's DOM element and returns per-rect options.
-   *
-   * Defaults produce centred, wall-free spacing.
-   */
+  /** Pull bias for all rects, or a function from child HTMLElement to options. */
   pull?: PullOptions | ((el: HTMLElement) => PullOptions);
 
   /**
-   * How positions are written back to each child element.
-   *
-   * - `'transform'`  — single `translate` on the `transform` property (GPU-composited, best perf)
-   * - `'top-left'`   — `top` + `left` + `translateX(-50%)`
-   * - `'top-transform'` — `top` + `translateX(-50%) translateX(${x}px)` (default / preferred)
+   * CSS transition for position changes.
+   * Set to '' to disable animation.
+   * @default 'top 200ms ease, transform 200ms ease'
    */
-  positionMode?: 'transform' | 'top-left' | 'top-transform';
-
-  /**
-   * Gap (in px) added around each rectangle before packing.
-   * Creates visual spacing between items without you needing to add margins.
-   * @default 8
-   */
-  gap?: number;
+  transition?: string;
 }
 
-// ─── Default options ──────────────────────────────────────────────────────────
+const DEFAULT_TRANSITION = 'top 200ms ease, transform 200ms ease';
 
-const DEFAULTS: Required<MasonTreeOptions> = {
-  iterations:   8,
-  pull:         {
-    pullX:            true,
-    pullY:            true,
-    pullXValue:       0,
-    pullYValue:       0,
-    stickyLeftWall:   false,
-    stickyTopWall:    false,
-    stickyRightWall:  false,
-    stickyBottomWall: false,
-  },
-  positionMode: 'top-transform',
-  gap:          8,
-};
-
-// ─── Component ────────────────────────────────────────────────────────────────
-
-/**
- * `<masontree>` — a layout container that packs its direct children using the
- * MasonTree bin-packing algorithm and then iteratively repositions them for
- * even spacing.
- *
- * Children must be **positioned elements** (`position: absolute` is set
- * automatically).  The host element's width drives the layout; its height is
- * set automatically by the algorithm output.
- *
- * ```html
- * <masontree [opts]="{ gap: 12, iterations: 6 }">
- *   <div style="width: 200px; height: 302px">Item A</div>
- *   <div style="width: 102px; height: 120px">Item B</div>
- * </masontree>
- * ```
- */
 @Component({
-  selector:        'masontree',
-  standalone:      true,
+  selector: 'masontree',
+  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template:        '<ng-content/>',
-  styles: [`
-    :host {
-      display:  block;
-      position: relative;
-      /* Height is driven by the algorithm — never set it in CSS */
-    }
-  `],
+  template: `<ng-content />`,
+  styles: [
+    `
+      :host {
+        display: block;
+        position: relative;
+      }
+    `,
+  ],
 })
 export class MasonTreeComponent implements AfterContentInit, OnChanges, OnDestroy {
-
   @Input() opts?: MasonTreeOptions;
 
-  // ── DI ─────────────────────────────────────────────────────────────────────
-  readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
-  readonly zone = inject(NgZone);
+  private hostEl!: HTMLElement;
+  private containerObs!: ResizeObserver;
+  private childObs!: ResizeObserver;
+  private mutationObs!: MutationObserver;
+  private pending = false;
+  private positions = new Map<HTMLElement, { x: number; y: number }>();
 
-  // ── State ───────────────────────────────────────────────────────────────────
-  containerObserver!: ResizeObserver;
-  childObserver!:     ResizeObserver;
-  childMutations!:    MutationObserver;
-  scheduled           = false;
-
-  // ── Lifecycle ────────────────────────────────────────────────────────────────
+  constructor(
+    private readonly elRef: ElementRef<HTMLElement>,
+    private readonly zone: NgZone,
+  ) {}
 
   ngAfterContentInit(): void {
-    // All observation is set up outside Angular's zone so ResizeObserver
-    // callbacks don't trigger unnecessary change-detection cycles.
+    this.hostEl = this.elRef.nativeElement;
+
     this.zone.runOutsideAngular(() => {
-      // Watch container width changes
-      this.containerObserver = new ResizeObserver(() => this._schedule());
-      this.containerObserver.observe(this.host.nativeElement);
+      this.containerObs = new ResizeObserver(() => this.schedule());
+      this.containerObs.observe(this.hostEl);
 
-      // Watch child size changes
-      this.childObserver = new ResizeObserver(() => this._schedule());
-      this._observeChildren();
+      this.childObs = new ResizeObserver(() => this.schedule());
+      this.observeChildren();
 
-      // Watch DOM children being added / removed
-      this.childMutations = new MutationObserver(() => {
-        this._observeChildren();
-        this._schedule();
+      this.mutationObs = new MutationObserver(() => {
+        this.observeChildren();
+        this.schedule();
       });
-      this.childMutations.observe(this.host.nativeElement, { childList: true });
+      this.mutationObs.observe(this.hostEl, { childList: true });
     });
 
-    // Run once immediately for the initial layout
-    this._runLayout();
+    // First render — no transition so items snap into place immediately.
+    this.runLayout({ animate: false });
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['opts'] && !changes['opts'].firstChange) {
-      this._schedule();
-    }
+    if (!changes['opts']?.firstChange) this.schedule();
   }
 
   ngOnDestroy(): void {
-    this.containerObserver?.disconnect();
-    this.childObserver?.disconnect();
-    this.childMutations?.disconnect();
+    this.containerObs?.disconnect();
+    this.childObs?.disconnect();
+    this.mutationObs?.disconnect();
   }
 
-  // ── Private ─────────────────────────────────────────────────────────────────
-
-  /** Register every direct child with the child ResizeObserver. */
-  _observeChildren(): void {
-    this.childObserver.disconnect();
-    for (const child of this._children()) {
-      this.childObserver.observe(child);
+  private observeChildren(): void {
+    this.childObs.disconnect();
+    for (const child of this.children()) {
+      this.childObs.observe(child);
     }
   }
 
-  /** Debounce multiple synchronous resize events into one layout pass. */
-  _schedule(): void {
-    if (this.scheduled) return;
-    this.scheduled = true;
+  private schedule(): void {
+    if (this.pending) return;
+    this.pending = true;
     requestAnimationFrame(() => {
-      this.scheduled = false;
-      this._runLayout();
+      this.pending = false;
+      this.runLayout({ animate: true });
     });
   }
 
-  _children(): HTMLElement[] {
-    return Array.from(this.host.nativeElement.children) as HTMLElement[];
+  private children(): HTMLElement[] {
+    return Array.from(this.hostEl.children) as HTMLElement[];
   }
 
-  _runLayout(): void {
-    const options      = { ...DEFAULTS, ...this.opts };
-    const gap          = options.gap;
-    const hostEl       = this.host.nativeElement;
-    const containerW   = hostEl.getBoundingClientRect().width;
-    const children     = this._children();
+  private runLayout({ animate }: { animate: boolean }): void {
+    const gap = this.opts?.gap ?? 0;
+    const iterations = this.opts?.iterations ?? 8;
+    const pull = this.opts?.pull;
+    const transition = animate ? (this.opts?.transition ?? DEFAULT_TRANSITION) : '';
+
+    const children = this.children();
+    const containerW = this.hostEl.getBoundingClientRect().width;
 
     if (children.length === 0 || containerW === 0) return;
 
-    // ── Build a fresh tree each layout pass ───────────────────────────────────
-    // MasonTree is an immutable-ish functional structure; re-building is cheap
-    // compared to mutating across layout passes with changing children.
-    const tree = new MasonTreeWithLayout(Math.floor(containerW));
+    // Build tree with the true container width and global gap.
+    const tree = new MasonTree(containerW, gap);
 
-    // We pack inflated rects (rect + gap on each side) and then remove the
-    // gap offset when writing positions back, giving us inter-item spacing.
-    const rectInits = children.map((el, i) => {
-      const { width, height } = el.getBoundingClientRect();
-      return {
-        id: i,
-        x:  0,
-        y:  0,
-        w:  Math.max(1, Math.round(width  + gap * 2)),
-        h:  Math.max(1, Math.round(height + gap * 2)),
-      };
-    });
-
-    tree.addRect(...rectInits);
-
-    // ── Iterative repositioning ───────────────────────────────────────────────
-    const pullOpts = options.pull;
-    tree.iterativelyAdjustRectangles(
-      options.iterations,
-      typeof pullOpts === 'function'
-        ? (id: unknown) => (pullOpts as (el: HTMLElement) => PullOptions)(children[id as number])
-        : pullOpts,
+    // Pack with true sizes — no inflation.
+    // Per-rect margin is read from the [masonItem] directive's property if set,
+    // otherwise the tree's defaultGap applies.
+    tree.addRect(
+      ...children.map((el, i) => {
+        const { width, height } = el.getBoundingClientRect();
+        const perRectMargin = (el as any)[MASON_MARGIN_KEY] as number | undefined;
+        return {
+          id: i,
+          w: Math.max(1, Math.round(width)),
+          h: Math.max(1, Math.round(height)),
+          margin: perRectMargin, // undefined → tree uses defaultGap
+        };
+      }),
     );
 
-    // ── Write positions back to the DOM ───────────────────────────────────────
-    const mode = options.positionMode;
+    tree.iterativelyAdjust(
+      iterations,
+      typeof pull === 'function'
+        ? (id: unknown) => (pull as (el: HTMLElement) => PullOptions)(children[id as number])
+        : pull,
+    );
 
+    // Write positions. rect.x / rect.y are the true visual origins.
     for (const [id, rect] of tree.rects) {
       const el = children[id as number];
       if (!el) continue;
 
-      // Subtract the gap padding so the visual rect aligns to the packed position
-      const x = rect.x + gap;
-      const y = rect.y + gap;
+      const { x, y } = rect;
+      const prev = this.positions.get(el);
+      const moved = !prev || prev.x !== x || prev.y !== y;
 
-      el.style.position = 'absolute';
-
-      switch (mode) {
-        case 'transform':
-          el.style.left      = '';
-          el.style.top       = '';
-          el.style.transform = `translate(${x}px, ${y}px)`;
-          break;
-
-        case 'top-left':
-          el.style.left      = `${x}px`;
-          el.style.top       = `${y}px`;
-          el.style.transform = '';
-          break;
-
-        case 'top-transform':
-        default:
-          el.style.left      = '';
-          el.style.top       = `${y}px`;
-          el.style.transform = `translateX(${x}px)`;
-          break;
+      if (moved) {
+        el.style.transition = transition;
+        el.style.position = 'absolute';
+        el.style.top = `${y}px`;
+        el.style.transform = `translateX(${x}px)`;
+        this.positions.set(el, { x, y });
       }
     }
 
-    // ── Set host height to match packed content ───────────────────────────────
-    hostEl.style.height = `${tree.height}px`;
+    // Evict removed elements from the cache.
+    for (const el of this.positions.keys()) {
+      if (!children.includes(el)) this.positions.delete(el);
+    }
+
+    this.hostEl.style.height = `${tree.height}px`;
   }
 }

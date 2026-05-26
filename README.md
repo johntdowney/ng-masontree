@@ -1,4 +1,4 @@
-# @your-org/masontree
+# masontree
 
 An Angular layout component that packs its direct children using a 2-D
 bin-packing algorithm backed by functional red-black trees, then runs an
@@ -7,7 +7,7 @@ iterative repositioning pass to even out the spacing.
 ## Installation
 
 ```bash
-npm install @your-org/masontree functional-red-black-tree
+npm install masontree functional-red-black-tree
 npm install --save-dev @types/functional-red-black-tree
 ```
 
@@ -23,7 +23,7 @@ npm install --save-dev @types/functional-red-black-tree
 
 ```ts
 import { Component } from '@angular/core';
-import { MasonTreeComponent, MasonTreeOptions } from '@your-org/masontree';
+import { MasonTreeComponent, MasonTreeOptions } from 'masontree';
 
 @Component({
   selector: 'app-root',
@@ -122,7 +122,7 @@ options: MasonTreeOptions = {
 The core algorithm is framework-agnostic:
 
 ```ts
-import { MasonTreeWithLayout } from '@your-org/masontree';
+import { MasonTreeWithLayout } from 'masontree';
 
 const tree = new MasonTreeWithLayout(800 /* container width */);
 tree.addRect(
@@ -150,7 +150,7 @@ In your consuming application, point to the dist folder or publish to npm:
 // consuming app's package.json
 {
   "dependencies": {
-    "@your-org/masontree": "file:../masontree/dist/masontree"
+    "masontree": "file:../masontree/dist/masontree"
   }
 }
 ```
