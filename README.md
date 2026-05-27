@@ -1,6 +1,10 @@
 # ng-masontree
 
-An Angular layout component that packs its direct children using the [Masontree](https://github.com/johntdowney/masontree) bin-packing algorithm, then iteratively repositions them for even spacing. The name is a play on *masonry layout* because ng-masontree provides a similar layout, but without a rigid grid-based approach and handling arbitrarily sized rectangles.
+An Angular layout component that packs its direct children using the 
+[Masontree](https://github.com/johntdowney/masontree) bin-packing 
+algorithm with iterative repositioning for even spacing. The name is a 
+play on *masonry layout* because `ng-masontree` provides a similar layout, 
+but without a rigid grid-based approach and it handles arbitrarily sized rectangles.
 
 ## Installation
 
@@ -12,7 +16,8 @@ Requires Angular 21+. No other dependencies required.
 
 ## Basic usage
 
-Import the component (and optionally the directive) into your standalone component or NgModule:
+Import the component (and optionally the directive) into your standalone 
+component or NgModule:
 
 ```ts
 import { MasontreeComponent, MasonItemDirective } from '@johntdowney/ng-masontree';
@@ -39,7 +44,8 @@ The component:
 - Sets its own `height` to match the packed content
 - Re-runs the layout whenever the container or any child changes size, or children are added/removed
 
-The **width** is always taken from the host element — style it however you like (`width: 100%`, a fixed value, etc.). The **height** is always derived from the algorithm output and should not be set in CSS.
+The **width** is always taken from the host element — style it however you like (`width: 100%`, a fixed 
+value, etc.). The **height** is always derived from the algorithm output and should not be set in CSS.
 
 ## Options
 
@@ -133,6 +139,33 @@ options: MasontreeOptions = {
 ## Programmatic use
 
 The underlying algorithm is available from the separate [`@johntdowney/masontree`](@johntdowney/masontree) package for use outside Angular.
+
+# Development
+
+## Building
+
+To build the library, run:
+
+```bash
+ng build
+```
+
+This command will compile your project, and the build artifacts will be placed in the `dist/ng-masontree` directory.
+
+### Publishing the Library
+
+Run the `npm run publish` script to publish this library to the npm registry:
+```bash
+npm run publish
+```
+
+## Running unit tests
+
+To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+
+```bash
+ng test
+```
 
 ## License
 
