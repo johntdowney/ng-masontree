@@ -138,7 +138,7 @@ options: MasontreeOptions = {
 
 ## Programmatic use
 
-The underlying algorithm is available from the separate [`@johntdowney/masontree`](@johntdowney/masontree) package for use outside Angular.
+The underlying algorithm is available from the separate [`@johntdowney/masontree`](https://github.com/johntdowney/masontree) package for use outside Angular.
 
 # Development
 
