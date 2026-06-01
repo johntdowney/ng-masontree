@@ -7,7 +7,7 @@
   "peerDependencies": {
     "@angular/common": "^21.2.0",
     "@angular/core": "^21.2.0",
-    "@johntdowney/masontree": "^1.0.13"
+    "@johntdowney/masontree": "^1.1.5"
   },
   "repository": {
     "type": "git",
@@ -15,15 +15,7 @@
   },
   "module": "fesm2022/johntdowney-ng-masontree.mjs",
   "typings": "types/johntdowney-ng-masontree.d.ts",
-  "exports": {
-    "./package.json": {
-      "default": "./package.json"
-    },
-    ".": {
-      "types": "./types/johntdowney-ng-masontree.d.ts",
-      "default": "./fesm2022/johntdowney-ng-masontree.mjs"
-    }
-  },
+
   "sideEffects": false,
   "type": "module",
   "dependencies": {

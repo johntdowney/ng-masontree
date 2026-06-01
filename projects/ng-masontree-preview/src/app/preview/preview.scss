@@ -1,0 +1,287 @@
+:host {
+  display: block;
+  font-family: 'DM Mono', 'Fira Mono', monospace;
+  background: #0f0f11;
+  color: #d4d4dc;
+  min-height: 100vh;
+  padding: 1.5rem;
+  box-sizing: border-box;
+}
+
+/* ── toolbar ─────────────────────────────────────────────────────────── */
+.toolbar {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  margin-bottom: 1.25rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.field-label {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #9e9e9e;
+}
+
+input[type='number'],
+input[type='text'] {
+  background: #1a1a1f;
+  border: 1px solid #2e2e38;
+  border-radius: 4px;
+  color: #d4d4dc;
+  font-family: inherit;
+  font-size: 0.78rem;
+  padding: 0.3rem 0.5rem;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+input[type='number'] {
+  width: 4.5rem;
+}
+
+input[type='text'] {
+  width: 7rem;
+}
+
+input:focus {
+  border-color: #5c8fe0;
+}
+
+/* ── buttons ─────────────────────────────────────────────────────────── */
+.btn {
+  padding: 0.35rem 0.9rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  transition:
+    opacity 0.15s,
+    transform 0.1s;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn:hover {
+  opacity: 0.85;
+}
+
+.btn-primary {
+  background: #5c8fe0;
+  color: #fff;
+}
+
+.btn-secondary {
+  background: #2e2e38;
+  color: #d4d4dc;
+}
+
+.btn-danger {
+  background: transparent;
+  border: 1px solid #444;
+  color: #888;
+  padding: 0.25rem 0.55rem;
+  font-size: 0.7rem;
+}
+
+.btn-danger:hover {
+  border-color: #e05c5c;
+  color: #e05c5c;
+}
+
+.btn-icon {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #666;
+  font-size: 0.9rem;
+  line-height: 1;
+  padding: 0.2rem;
+  transition: color 0.15s;
+}
+
+.btn-icon:hover {
+  color: #d4d4dc;
+}
+
+/* ── item list ───────────────────────────────────────────────────────── */
+.item-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 1.25rem;
+}
+
+.item-row {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 0.45rem 0.7rem;
+  background: #15151a;
+  border: 1px solid #222229;
+  border-radius: 6px;
+  transition: border-color 0.15s;
+}
+
+.item-row:hover {
+  border-color: #333340;
+}
+
+.swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.lock-badge {
+  font-size: 0.62rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.lock-badge.free {
+  background: #1e2d1e;
+  color: #5cc47a;
+}
+
+.lock-badge.locked {
+  background: #2d1e1e;
+  color: #e05c5c;
+}
+
+.coord-fields {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.coord-label {
+  font-size: 0.62rem;
+  color: #9e9e9e;
+}
+
+/* ── canvas area ─────────────────────────────────────────────────────── */
+.canvas-wrap {
+  position: relative;
+}
+
+.canvas-label {
+  font-size: 0.62rem;
+  color: #9e9e9e;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.4rem;
+}
+
+masontree {
+  display: block;
+  border: 1px solid #40404e;
+  background: #0c0c0e;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 24px 24px;
+  border-radius: 6px;
+  overflow: visible !important;
+  box-sizing: border-box;
+  transition: min-height 0.2s ease;
+}
+
+/* ── tiles ───────────────────────────────────────────────────────────── */
+.tile {
+  border-radius: 5px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  box-sizing: border-box;
+  border: 2px solid rgb(255 255 255 / 0.8);
+  user-select: none;
+  cursor: grab;
+  transition:
+    box-shadow 0.15s,
+    border-color 0.15s,
+    opacity 0.15s;
+  position: relative;
+}
+
+.tile:active {
+  cursor: grabbing;
+}
+
+.tile.locked {
+  border-style: dashed;
+  border-color: rgba(255, 255, 255, 0.95);
+}
+
+.tile.dragging {
+  opacity: 0.92;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  cursor: grabbing;
+  z-index: 1000;
+  /* Disable the masontree transition during drag for instant feedback */
+  transition:
+    box-shadow 0.15s,
+    border-color 0.15s !important;
+}
+
+.tile-buttons {
+  display: flex;
+  gap: 0.25rem;
+
+  width: 100%;
+  justify-content: end;
+}
+
+.tile-label {
+  pointer-events: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 90%;
+  text-align: center;
+}
+
+.tile-lock-btn {
+  pointer-events: all;
+  background: rgba(255, 255, 255, 00);
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 0.65rem;
+  line-height: 1;
+  padding: 0.15rem 0.3rem;
+  transition:
+    background 0.15s,
+    color 0.15s;
+  flex-shrink: 0;
+}
+
+.tile-lock-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  color: #fff;
+}
+
+.tile.locked .tile-lock-btn {
+  color: #e05c5c;
+}

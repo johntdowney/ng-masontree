@@ -323,23 +323,23 @@ describe('MasonItemDirective', () => {
   it('writes __masonMargin onto the element', async () => {
     const fixture = await makeFixture(20);
     const el = fixture.nativeElement.querySelector('#r1') as any;
-    expect(el.__masonMargin).toBe(20);
+    expect(el.__masonData).toStrictEqual({ margin: 20, locked: false, x: 0, y: 0 });
   });
 
   it('updates __masonMargin when input changes', async () => {
     const fixture = await makeFixture(10);
     const el = fixture.nativeElement.querySelector('#r1') as any;
-    expect(el.__masonMargin).toBe(10);
+
+    expect(el.__masonData).toStrictEqual({ margin: 10, locked: false, x: 0, y: 0 });
     fixture.componentInstance.margin = 40;
     fixture.changeDetectorRef.detectChanges(); // fixture.detectChanges() fails here
-
-    expect(el.__masonMargin).toBe(40);
+    expect(el.__masonData).toStrictEqual({ margin: 40, locked: false, x: 0, y: 0 });
   });
 
   it('clamps negative margin to 0', async () => {
     const fixture = await makeFixture(-5);
     const el = fixture.nativeElement.querySelector('#r1') as any;
-    expect(el.__masonMargin).toBe(0);
+    expect(el.__masonData).toStrictEqual({ margin: 0, locked: false, x: 0, y: 0 });
   });
 
   it('flush rects (margin 0, gap 0) touch each other', async () => {

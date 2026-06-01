@@ -1,0 +1,175 @@
+<!-- ── Toolbar ───────────────────────────────────────────────────────── -->
+<div class="toolbar">
+  <div class="field">
+    <span class="field-label">Width</span>
+    <input
+      type="number"
+      [ngModel]="containerWidth()"
+      (ngModelChange)="containerWidth.set(+$event)"
+      min="200"
+      step="20"
+    />
+  </div>
+  <div class="field">
+    <span class="field-label">Gap</span>
+    <input type="number" [ngModel]="gap()" (ngModelChange)="gap.set(+$event)" min="0" step="4" />
+  </div>
+  <div class="field">
+    <span class="field-label">Iterations</span>
+    <input
+      type="number"
+      [ngModel]="iterations()"
+      (ngModelChange)="iterations.set(+$event)"
+      min="0"
+      max="20"
+    />
+  </div>
+  <div class="field">
+    <span class="field-label">Pull X</span>
+    <input
+      type="number"
+      [ngModel]="pullX()"
+      (ngModelChange)="pullX.set(+$event)"
+      min="-1"
+      max="1"
+      step="0.1"
+    />
+  </div>
+  <div class="field">
+    <span class="field-label">Pull Y</span>
+    <input
+      type="number"
+      [ngModel]="pullY()"
+      (ngModelChange)="pullY.set(+$event)"
+      min="-1"
+      max="1"
+      step="0.1"
+    />
+  </div>
+  <button class="btn btn-primary" (click)="addFree()">+ Rectangle</button>
+</div>
+
+@if (false) {
+  <!-- ── Item list ─────────────────────────────────────────────────────── -->
+  <div class="item-list">
+    @for (item of items(); track item.id) {
+      <div class="item-row">
+        <div class="swatch" [ngStyle]="{ background: item.color }"></div>
+        <input
+          type="text"
+          [ngModel]="item.label"
+          (ngModelChange)="update(item.id, 'label', $event)"
+        />
+        <div class="field" style="flex-direction: row; align-items: center; gap: 0.3rem">
+          <span class="field-label">W</span>
+          <input
+            type="number"
+            [ngModel]="item.w"
+            (ngModelChange)="update(item.id, 'w', +$event)"
+            min="80"
+          />
+        </div>
+        <div class="field" style="flex-direction: row; align-items: center; gap: 0.3rem">
+          <span class="field-label">H</span>
+          <input
+            type="number"
+            [ngModel]="item.h"
+            (ngModelChange)="update(item.id, 'h', +$event)"
+            min="80"
+          />
+        </div>
+        @if (item.locked) {
+          <span class="lock-badge" [class.locked]="item.locked" [class.free]="!item.locked">
+            locked at
+          </span>
+        }
+        @if (item.locked) {
+          <div class="coord-fields">
+            <span class="coord-label">x</span>
+            <input
+              type="number"
+              [ngModel]="item.lockX"
+              (ngModelChange)="update(item.id, 'lockX', +$event)"
+            />
+            <span class="coord-label">y</span>
+            <input
+              type="number"
+              [ngModel]="item.lockY"
+              (ngModelChange)="update(item.id, 'lockY', +$event)"
+            />
+          </div>
+        }
+        <button class="btn btn-danger" (click)="remove(item.id)">✕</button>
+      </div>
+    }
+  </div>
+}
+<!-- ── Canvas ────────────────────────────────────────────────────────── -->
+<div class="canvas-label">Layout canvas — drag to reposition, click 🔒 to lock/unlock</div>
+<div class="canvas-wrap">
+  <masontree
+    #masontreeEl
+    [opts]="opts()"
+    [style.width.px]="containerWidth()"
+    [style.minHeight.px]="dragMinHeight()"
+  >
+    @for (item of items(); track item.id) {
+      <div
+        masonItem
+        [masonLocked]="item.locked"
+        [masonX]="item.lockX"
+        [masonY]="item.lockY"
+        [masonMargin]="item.margin"
+        [ngStyle]="{
+          width: item.w + 'px',
+          height: item.h + 'px',
+          background: item.color + 'cc',
+          backgroundColor: item.color + 'cc',
+        }"
+        [ngClass]="{ tile: true, locked: item.locked, dragging: draggingId() === item.id }"
+        (mousedown)="onTileMouseDown($event, item.id)"
+      >
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            width: 100%;
+          "
+        >
+          <div class="tile-buttons">
+            @if (item.locked) {
+              <button
+                class="tile-lock-btn"
+                (click)="onLockClick($event, item.id)"
+                [title]="item.locked ? 'Unlock' : 'Lock position'"
+              >
+                <img
+                  [src]="item.locked ? 'lock.svg' : 'unlock.svg'"
+                  alt="Lock"
+                  style="width: 20px"
+                />
+              </button>
+            }
+            <button class="tile-lock-btn" (click)="onDeleteClick($event, item.id)" title="Delete">
+              <img src="trash.svg" alt="Delete" style="width: 20px" />
+            </button>
+          </div>
+          <div
+            style="
+              width: 100%;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              flex-grow: 1;
+            "
+          >
+            <span class="tile-label">{{ item.label }}</span>
+          </div>
+        </div>
+      </div>
+    }
+  </masontree>
+</div>
